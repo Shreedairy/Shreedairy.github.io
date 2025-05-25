@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>सभी ग्राहक - दूध व्यवसाय</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #e9f5ff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .controls label {
+            font-weight: bold;
+            color: #0056b3;
+            margin-right: 8px;
+            font-size: 1.1em;
+        }
+        .controls select {
+            padding: 10px 15px;
+            border: 1px solid #a0c4ff;
+            border-radius: 5px;
+            font-size: 16px;
+            background-color: #f8faff;
+            color: #333;
+            appearance: none; /* Remove default select arrow */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230056b3'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+            cursor: pointer;
+            min-width: 150px;
+        }
+        .controls select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+
+        .data-table-section {
+            margin-top: 30px;
+            overflow-x: auto; /* Adds horizontal scroll if content overflows */
+            -webkit-overflow-scrolling: touch; /* Improves scrolling on iOS */
+        }
+        .table-header {
+            text-align: center;
+            color: #28a745;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+        .customer-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border-radius: 10px;
+            overflow: hidden; /* Ensures rounded corners apply to content */
+            min-width: 600px; /* Adjust this value if your content is wider */
+        }
+        .customer-table th, .customer-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 1.05em;
+        }
+        .customer-table thead th {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .customer-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .customer-table tbody tr:hover {
+            background-color: #eef8ff;
+            transition: background-color 0.2s ease;
+        }
+        .customer-table tbody td {
+            color: #555;
+        }
+        .customer-table td.actions {
+            white-space: nowrap; /* Prevents buttons from wrapping */
+        }
+        .customer-table td.actions input[type="checkbox"] {
+            transform: scale(1.5); /* Make checkboxes larger */
+            margin: 0 10px;
+            cursor: pointer;
+        }
+        .status-icon {
+            font-size: 1.2em;
+            font-weight: bold;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        .status-icon.checked {
+            color: #28a745; /* Green for checked */
+            /* background-color: #e6ffe6; */
+        }
+        .status-icon.unchecked {
+            color: #dc3545; /* Red for unchecked */
+            /* background-color: #ffe6e6; */
+        }
+
+        .no-data-message {
+            text-align: center;
+            font-size: 1.3em;
+            color: #6c757d;
+            margin-top: 50px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        /* Home Button - Reusing existing style if present */
+        .home-button-container {
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        .home-button {
+            display: inline-block;
+            background-color: #6c757d; /* A neutral color */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+        .home-button:hover {
+            background-color: #5a6268;
+        }
+
+        /* Export Button Styles */
+        .export-button-container {
+            text-align: center;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+
+        .export-button {
+            background-color: #28a745; /* Green color */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
+        }
+
+        .export-button:hover {
+            background-color: #218838; /* Darker green on hover */
+            transform: translateY(-2px);
+        }
+
+        .export-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2);
+        }
+
+        /* Adjust padding/font size for smaller screens if needed */
+        @media (max-width: 768px) {
+            .customer-table th, .customer-table td {
+                padding: 8px 10px; /* Smaller padding on mobile */
+                font-size: 0.9em; /* Slightly smaller font size */
+            }
+            .controls {
+                flex-direction: column; /* Stack controls vertically on small screens */
+                align-items: stretch;
+            }
+            .controls div {
+                width: 100%;
+                text-align: center;
+            }
+            .controls select {
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .customer-table th, .customer-table td {
+                padding: 6px 8px;
+                font-size: 0.85em;
+            }
+            /* You might need to further adjust min-width for very small screens if content is too wide */
+            .customer-table {
+                min-width: 500px; /* Adjust based on minimum content width */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>सभी ग्राहकों की सूची</h1>
+
+        <div class="home-button-container">
+            <a href="index.html" class="home-button">होम पेज पर वापस जाएँ</a>
+        </div>
+
+        <div class="controls">
+            <div>
+                <label for="month-select">महीना चुनें:</label>
+                <select id="month-select"></select>
+            </div>
+            <div>
+                <label for="delivery-time-select">डिलीवरी का समय:</label>
+                <select id="delivery-time-select">
+                    <option value="Morning">सुबह</option>
+                    <option value="Evening">शाम</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="data-table-section" id="customer-data-section">
+            <h2 class="table-header" id="current-date-header"></h2>
+            <table class="customer-table" id="customers-table">
+                <thead>
+                    <tr id="table-head-row">
+                        <th>नाम</th>
+                        <th>मकान नंबर</th>
+                        <th>लीटर</th>
+                        <th>बोतल वापसी</th>
+                        <th>अनुपस्थित</th>
+                        <th>भुगतान</th>
+                    </tr>
+                </thead>
+                <tbody id="customers-table-body">
+                    </tbody>
+            </table>
+            <div id="no-data-message" class="no-data-message" style="display:none;">
+                चयनित फिल्टर के लिए कोई ग्राहक डेटा उपलब्ध नहीं है।
+            </div>
+        </div>
+
+        <div class="export-button-container">
+            <button id="export-to-excel-btn" class="export-button">
+                एक्सेल में एक्सपोर्ट करें
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where, doc, updateDoc, arrayUnion, arrayRemove, getDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQahkTWLPVDdI_DdEymvyaHoEQxQ3tzHQ",
+            authDomain: "shreedairy-business-app.firebaseapp.com",
+            projectId: "shreedairy-business-app",
+            storageBucket: "shreedairy-business-app.firebasestorage.app",
+            messagingSenderId: "987256641105",
+            appId: "1:987256641105:web:2724c79d634e9159c0ca70",
+            measurementId: "G-7PXSXT5QKD"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const monthSelect = document.getElementById('month-select');
+        const deliveryTimeSelect = document.getElementById('delivery-time-select');
+        const customersTableBody = document.getElementById('customers-table-body');
+        const currentDateHeader = document.getElementById('current-date-header');
+        const noDataMessage = document.getElementById('no-data-message');
+        const customerDataTable = document.getElementById('customers-table');
+        const exportToExcelBtn = document.getElementById('export-to-excel-btn'); // बटन को यहाँ प्राप्त करें
+
+        // Function to format date to YYYY-MM-DD
+        function getFormattedDate(date) {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Get current date for table header
+        const today = new Date();
+        const formattedToday = new Intl.DateTimeFormat('hi-IN', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        }).format(today);
+        currentDateHeader.textContent = `आज की तारीख: ${formattedToday}`;
+
+        // Function to fetch unique months from monthlyData subcollections
+        async function fetchAvailableMonths() {
+            try {
+                const customersRef = collection(db, "Customers");
+                const customerSnapshot = await getDocs(customersRef);
+                const uniqueMonths = new Set();
+
+                for (const customerDoc of customerSnapshot.docs) {
+                    const monthlyDataRef = collection(db, `Customers/${customerDoc.id}/monthlyData`);
+                    const monthlyDataSnapshot = await getDocs(monthlyDataRef);
+                    monthlyDataSnapshot.forEach(doc => {
+                        // Assuming monthlyData subcollection docs are named by month like '2025_04'
+                        if (doc.id.match(/^\d{4}_\d{2}$/)) { // Basic validation for month format
+                             uniqueMonths.add(doc.id);
+                        }
+                    });
+                }
+                const sortedMonths = Array.from(uniqueMonths).sort();
+                return sortedMonths;
+            } catch (error) {
+                console.error("महीने फ़ेच करने में त्रुटि:", error);
+                return [];
+            }
+        }
+
+        // Function to populate month dropdown
+        async function populateMonthSelect() {
+            const months = await fetchAvailableMonths();
+            monthSelect.innerHTML = ''; // Clear existing options
+            if (months.length === 0) {
+                monthSelect.innerHTML = '<option value="">कोई महीना उपलब्ध नहीं</option>';
+                monthSelect.disabled = true;
+                return;
+            }
+            monthSelect.disabled = false;
+
+            const monthMap = {
+                '01': 'जनवरी', '02': 'फरवरी', '03': 'मार्च', '04': 'अप्रैल',
+                '05': 'मई', '06': 'जून', '07': 'जुलाई', '08': 'अगस्त',
+                '09': 'सितंबर', '10': 'अक्टूबर', '11': 'नवंबर', '12': 'दिसंबर'
+            };
+
+            months.forEach(monthKey => {
+                const [year, monthNum] = monthKey.split('_');
+                const monthName = monthMap[monthNum] || monthNum;
+                const option = document.createElement('option');
+                option.value = monthKey;
+                option.textContent = `${monthName} ${year}`;
+                monthSelect.appendChild(option);
+            });
+
+            // Set default to current month if available, otherwise first month
+            const currentYearMonth = getFormattedDate(today).substring(0, 7).replace('-', '_'); // e.g., '2025_05'
+            if (months.includes(currentYearMonth)) {
+                monthSelect.value = currentYearMonth;
+            } else if (months.length > 0) {
+                monthSelect.value = months[0];
+            }
+        }
+
+        // Function to display customer data
+        async function displayCustomerData() {
+            customersTableBody.innerHTML = ''; // Clear existing table rows
+            noDataMessage.style.display = 'none'; // Hide no data message
+            customerDataTable.style.display = 'table'; // Show table
+            exportToExcelBtn.style.display = 'block'; // Show export button by default
+
+            const selectedMonth = monthSelect.value;
+            const selectedDeliveryTime = deliveryTimeSelect.value;
+
+            if (!selectedMonth) {
+                noDataMessage.textContent = 'कृपया एक महीना चुनें।';
+                noDataMessage.style.display = 'block';
+                customerDataTable.style.display = 'none';
+                exportToExcelBtn.style.display = 'none'; // Hide export button if no month selected
+                return;
+            }
+
+            try {
+                const customersRef = collection(db, "Customers");
+                const allCustomersSnapshot = await getDocs(customersRef);
+                let customersFound = false;
+
+                for (const customerDoc of allCustomersSnapshot.docs) {
+                    const customerId = customerDoc.id;
+                    const customerDetails = customerDoc.data();
+
+                    const monthlyDataDocRef = doc(db, `Customers/${customerId}/monthlyData`, selectedMonth);
+                    const monthlyDataSnapshot = await getDoc(monthlyDataDocRef);
+
+                    if (monthlyDataSnapshot.exists()) {
+                        const monthlyData = monthlyDataSnapshot.data();
+
+                        if (monthlyData.deliveryTime === selectedDeliveryTime) {
+                            customersFound = true;
+                            const row = customersTableBody.insertRow();
+                            row.insertCell().textContent = customerDetails.Name || 'N/A';
+                            row.insertCell().textContent = customerDetails.houseNo || 'N/A';
+                            row.insertCell().textContent = monthlyData.quantity || '0'; // liter
+
+                            // Bottle Return Cell
+                            const bottleReturnCell = row.insertCell();
+                            const bottleReturnCheckbox = document.createElement('input');
+                            bottleReturnCheckbox.type = 'checkbox';
+                            bottleReturnCheckbox.dataset.customerId = customerId;
+                            bottleReturnCheckbox.dataset.month = selectedMonth;
+                            bottleReturnCheckbox.dataset.fieldType = 'BottleReturn';
+
+                            // Check if current date is in BottleReturnDates
+                            if (monthlyData.BottleReturnDates && monthlyData.BottleReturnDates.includes(getFormattedDate(today))) {
+                                bottleReturnCheckbox.checked = true;
+                            }
+                            bottleReturnCheckbox.addEventListener('change', handleCheckboxChange);
+                            bottleReturnCell.appendChild(bottleReturnCheckbox);
+
+                            // Absent Cell
+                            const absentCell = row.insertCell();
+                            const absentCheckbox = document.createElement('input');
+                            absentCheckbox.type = 'checkbox';
+                            absentCheckbox.dataset.customerId = customerId;
+                            absentCheckbox.dataset.month = selectedMonth;
+                            absentCheckbox.dataset.fieldType = 'Absent';
+
+                            // Check if current date is in absentDates
+                            if (monthlyData.absentDates && monthlyData.absentDates.includes(getFormattedDate(today))) {
+                                absentCheckbox.checked = true;
+                            }
+                            absentCheckbox.addEventListener('change', handleCheckboxChange);
+                            absentCell.appendChild(absentCheckbox);
+
+                            // Paid Cell
+                            const paidCell = row.insertCell();
+                            const paidCheckbox = document.createElement('input');
+                            paidCheckbox.type = 'checkbox';
+                            paidCheckbox.dataset.customerId = customerId;
+                            paidCheckbox.dataset.month = selectedMonth;
+                            paidCheckbox.dataset.fieldType = 'Paid';
+                            paidCheckbox.dataset.quantity = monthlyData.quantity || '0'; // Store quantity for paid calculation
+
+                            // For paid, we need to check if an entry exists for today's date in the array of objects.
+                            if (monthlyData.PaidDates && monthlyData.PaidDates.some(entry => entry.date === getFormattedDate(today))) {
+                                paidCheckbox.checked = true;
+                            }
+                            paidCheckbox.addEventListener('change', handleCheckboxChange);
+                            paidCell.appendChild(paidCheckbox);
+                        }
+                    }
+                }
+
+                if (!customersFound) {
+                    noDataMessage.textContent = 'चयनित फिल्टर के लिए कोई ग्राहक डेटा उपलब्ध नहीं है।';
+                    noDataMessage.style.display = 'block';
+                    customerDataTable.style.display = 'none';
+                    exportToExcelBtn.style.display = 'none'; // Hide export button if no customers found
+                }
+
+            } catch (error) {
+                console.error("ग्राहक डेटा प्रदर्शित करने में त्रुटि:", error);
+                noDataMessage.textContent = 'डेटा लोड करने में त्रुटि हुई। कृपया पुनः प्रयास करें।';
+                noDataMessage.style.display = 'block';
+                customerDataTable.style.display = 'none';
+                exportToExcelBtn.style.display = 'none'; // Hide export button on error
+            }
+        }
+
+        async function handleCheckboxChange(event) {
+            const checkbox = event.target;
+            const customerId = checkbox.dataset.customerId;
+            const selectedMonth = checkbox.dataset.month;
+            const fieldType = checkbox.dataset.fieldType; // 'BottleReturn', 'Absent', 'Paid'
+            const isChecked = checkbox.checked;
+            const currentDate = getFormattedDate(today);
+
+            const monthlyDataDocRef = doc(db, `Customers/${customerId}/monthlyData`, selectedMonth);
+
+            try {
+                const monthlyDataSnap = await getDoc(monthlyDataDocRef);
+                const monthlyData = monthlyDataSnap.exists() ? monthlyDataSnap.data() : {};
+
+                if (fieldType === 'Absent') {
+                    let absentDates = monthlyData.absentDates || [];
+                    let absentCount = parseInt(monthlyData.absentCount || '0');
+
+                    if (isChecked) {
+                        if (!absentDates.includes(currentDate)) {
+                            absentDates.push(currentDate);
+                            absentCount += 1;
+                        }
+                    } else {
+                        const index = absentDates.indexOf(currentDate);
+                        if (index > -1) {
+                            absentDates.splice(index, 1);
+                            absentCount = Math.max(0, absentCount - 1); // Ensure count doesn't go below zero
+                        }
+                    }
+                    await updateDoc(monthlyDataDocRef, {
+                        absentDates: absentDates,
+                        absentCount: absentCount.toString() // Store as string as per your schema
+                    });
+                } else if (fieldType === 'BottleReturn') {
+                    let BottleReturnDates = monthlyData.BottleReturnDates || [];
+                    let BottleReturnCount = parseInt(monthlyData.BottleReturnCount || '0');
+
+                    if (isChecked) {
+                        if (!BottleReturnDates.includes(currentDate)) {
+                            BottleReturnDates.push(currentDate);
+                            BottleReturnCount += 1;
+                        }
+                    } else {
+                        const index = BottleReturnDates.indexOf(currentDate);
+                        if (index > -1) {
+                            BottleReturnDates.splice(index, 1);
+                            BottleReturnCount = Math.max(0, BottleReturnCount - 1);
+                        }
+                    }
+                    await updateDoc(monthlyDataDocRef, {
+                        BottleReturnDates: BottleReturnDates,
+                        BottleReturnCount: BottleReturnCount.toString() // Store as string
+                    });
+                } else if (fieldType === 'Paid') {
+                    let PaidDates = monthlyData.PaidDates || [];
+                    const customerQuantity = parseFloat(checkbox.dataset.quantity || '0');
+                    const paidValue = (customerQuantity * 70); // Calculate value
+
+                    if (isChecked) {
+                        // Add if not already present for today
+                        if (!PaidDates.some(entry => entry.date === currentDate)) {
+                            PaidDates.push({ date: currentDate, value: paidValue });
+                        }
+                    } else {
+                        // Remove if present for today
+                        PaidDates = PaidDates.filter(entry => entry.date !== currentDate);
+                    }
+                    await updateDoc(monthlyDataDocRef, {
+                        PaidDates: PaidDates
+                        // PaidCount is not specified for Paid field, so not updating
+                    });
+                }
+                console.log(`${fieldType} के लिए डेटा सफलतापूर्वक अपडेट किया गया!`);
+            } catch (error) {
+                console.error(`डेटा अपडेट करने में त्रुटि (${fieldType}):`, error);
+                alert(`डेटा अपडेट करने में त्रुटि हुई। कृपया पुनः प्रयास करें।`);
+                checkbox.checked = !isChecked; // Revert checkbox state on error
+            }
+        }
+
+        // Function to export table to CSV
+        function exportTableToCSV(filename) {
+            const table = document.getElementById('customers-table');
+            // Check if table exists and has rows (excluding header row)
+            if (!table || customersTableBody.rows.length === 0) {
+                alert('टेबल में कोई डेटा नहीं है जिसे एक्सपोर्ट किया जा सके।');
+                return;
+            }
+
+            const rows = table.querySelectorAll('tr'); // Select all rows including header
+            let csv = [];
+
+            // Add header row to CSV
+            const headerRow = rows[0];
+            const headerCols = headerRow.querySelectorAll('th');
+            const headerData = [];
+            for(let j = 0; j < headerCols.length; j++) {
+                headerData.push(headerCols[j].innerText);
+            }
+            csv.push(headerData.join(','));
+
+
+            // Add data rows to CSV
+            for (let i = 1; i < rows.length; i++) { // Start from 1 to skip the header row
+                const row = rows[i];
+                const cols = row.querySelectorAll('td'); // Only td for data rows
+                const rowData = [];
+
+                for (let j = 0; j < cols.length; j++) {
+                    const cell = cols[j];
+                    let cellText;
+
+                    // Handle checkboxes specifically
+                    if (cell.querySelector('input[type="checkbox"]')) {
+                        const checkbox = cell.querySelector('input[type="checkbox"]');
+                        cellText = checkbox.checked ? '✔' : '✖'; // Use checkmark or cross
+                    } else {
+                        cellText = cell.innerText;
+                    }
+                    // Sanitize text for CSV (handle commas, quotes, newlines)
+                    cellText = cellText.replace(/"/g, '""'); // Escape double quotes
+                    if (cellText.includes(',') || cellText.includes('\n') || cellText.includes(' ') || cellText.includes('✔') || cellText.includes('✖')) {
+                        cellText = `"${cellText}"`; // Enclose with quotes if contains comma, newline, space, or special chars
+                    }
+                    rowData.push(cellText);
+                }
+                csv.push(rowData.join(','));
+            }
+
+            const csvContent = csv.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename; // This sets the file name
+            
+            // Programmatically click the link to trigger download
+            // Ensure the link is appended to body, clicked, and then removed
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Revoke the object URL to free up memory
+            URL.revokeObjectURL(url);
+        }
+
+        // Event listener for the export button
+        exportToExcelBtn.addEventListener('click', () => {
+            const selectedMonth = monthSelect.value;
+            const selectedDeliveryTime = deliveryTimeSelect.value;
+            const filename = `Milk_Customers_${selectedMonth}_${selectedDeliveryTime}_${getFormattedDate(today)}.csv`;
+            exportTableToCSV(filename);
+            // Alert after a small delay to allow download to initiate
+            setTimeout(() => {
+                alert(`फ़ाइल "${filename}" सफलतापूर्वक डाउनलोड की गई। इसे अपने "डाउनलोड" फ़ोल्डर में देखें।`);
+            }, 100); 
+        });
+
+        // Event Listeners for dropdowns
+        monthSelect.addEventListener('change', displayCustomerData);
+        deliveryTimeSelect.addEventListener('change', displayCustomerData);
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await populateMonthSelect();
+            displayCustomerData(); // Initial display after month select is populated
+        });
+    </script>
+</body>
+</html>
