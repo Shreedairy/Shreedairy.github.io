@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>दूध व्यवसाय - डैशबोर्ड</title>
+    <style>
+        /* आपकी मौजूदा CSS यहाँ */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+        .month-selector {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .month-selector label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .month-selector select {
+            padding: 8px 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .customer-list {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-around;
+        }
+        .customer-group {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            width: calc(50% - 30px); /* Adjust width for better spacing */
+            box-sizing: border-box;
+        }
+        @media (max-width: 768px) {
+            .customer-group {
+                width: 100%;
+            }
+        }
+        h2 {
+            color: #28a745;
+            margin-top: 0;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .customer-table, .customer-table th, .customer-table td {
+            border: 1px solid #ddd;
+            border-collapse: collapse;
+        }
+
+        .customer-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #ddd; /* Added border to the table */
+        }
+        .customer-table thead th {
+            background-color: #e9ecef; /* Changed header background */
+            color: #333;
+            font-weight: bold;
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd; /* Added border to header cells */
+        }
+        .customer-table tbody td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .customer-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .customer-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .customer-table th[colspan] {
+            background-color: #f0f0f0; /* Highlight for name cell */
+            color: #007bff;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-bottom: 1px solid #ccc;
+        }
+        .actions button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 2px; /* Added horizontal margin to buttons */
+            transition: background-color 0.3s ease;
+        }
+        .actions button:hover {
+            background-color: #218838;
+        }
+        .view-details-btn {
+            background-color: #007bff;
+        }
+        .view-details-btn:hover {
+            background-color: #0056b3;
+        }
+        .record-change-btn {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .record-change-btn:hover {
+            background-color: #e0a800;
+        }
+        .daily-update-btn {
+            background-color: #17a2b8;
+        }
+        .daily-update-btn:hover {
+            background-color: #138496;
+        }
+        .add-new {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .add-new a {
+            display: inline-block;
+            text-decoration: none;
+            padding: 12px 25px;
+            background-color: #28a745;
+            color: white;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .add-new a:hover {
+            background-color: #218838;
+        }
+        
+        .button-container {
+            display: flex; /* बटनों को एक लाइन में रखने के लिए */
+            justify-content: center; /* बटनों को क्षैतिज रूप से (horizontal) केंद्र में लाने के लिए */
+            align-items: center; /* अगर ज़रूरत हो तो बटनों को लंबवत रूप से (vertical) केंद्र में लाने के लिए */
+            gap: 20px; /* बटनों के बीच की जगह बढ़ाने के लिए */
+            margin-top: 50px; /* पेज पर थोड़ी जगह बनाने के लिए, आप इसे अपनी ज़रूरत के अनुसार बदल सकते हैं */
+            margin-bottom: 20px;
+        }
+
+        .homebtn {
+            background-color: #4CAF50; /* आकर्षक हरा रंग */
+            color: white; /* टेक्स्ट का रंग */
+            padding: 15px 30px; /* बटन के अंदर की जगह */
+            border: none; /* बॉर्डर हटाएँ */
+            border-radius: 8px; /* गोल कोने */
+            cursor: pointer; /* कर्सर को पॉइंटर में बदलें */
+            font-size: 18px; /* फ़ॉन्ट साइज़ */
+            transition: background-color 0.3s ease, transform 0.3s ease; /* होवर इफ़ेक्ट के लिए स्मूथ ट्रांजिशन */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* थोड़ा शैडो ताकि बटन उभरा हुआ लगे */
+        }
+
+        .homebtn:hover {
+            background-color: #45a049; /* होवर करने पर गहरा हरा रंग */
+            transform: translateY(-3px); /* होवर करने पर थोड़ा ऊपर उठे */
+        }
+
+        .homebtn:active {
+            transform: translateY(0); /* क्लिक करने पर वापस अपनी जगह पर आए */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* क्लिक करने पर शैडो कम करें */
+        }
+
+        /* Login Modal Styles */
+        .modal {
+            display: none; /* Hidden by default, will be controlled by JS */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.7); /* Black w/ opacity */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .modal-content h2 {
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+
+        .modal-content input[type="text"],
+        .modal-content input[type="password"] {
+            width: calc(100% - 20px);
+            padding: 12px;
+            margin: 10px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .modal-content button {
+            background-color: #28a745;
+            color: white;
+            padding: 14px 20px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 18px;
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-content button:hover {
+            background-color: #218838;
+        }
+
+        .modal-content .error-message {
+            color: red;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+    </style>
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+// LocalStorage.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+import { getFirestore, collection, where, getDocs, query } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+// Your Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyAQahkTWLPVDdI_DdEymvyaHoEQxQ3tzHQ",
+    authDomain: "shreedairy-business-app.firebaseapp.com",
+    projectId: "shreedairy-business-app",
+    storageBucket: "shreedairy-business-app.firebasestorage.app",
+    messagingSenderId: "987256641105",
+    appId: "1:987256641105:web:2724c79d634e9159c0ca70",
+    measurementId: "G-7PXSXT5QKD"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const morningCustomersDiv = document.getElementById('morning-customers');
+const eveningCustomersDiv = document.getElementById('evening-customers');
+const monthSelect = document.getElementById('month-select');
+const CUSTOMER_DATA_KEY = 'customerData';
+const CURRENT_MONTH_KEY = 'currentMonth';
+
+// फंक्शन जो लोकल स्टोरेज से कस्टमर डेटा लोड करता है
+function loadCustomersFromLocalStorage(selectedMonth) {
+    const storedData = localStorage.getItem(CUSTOMER_DATA_KEY);
+    if (storedData) {
+        try {
+            const parsedData = JSON.parse(storedData);
+            displayCustomers(parsedData, selectedMonth);
+            console.log('डेटा लोकल स्टोरेज से लोड किया गया');
+            return true;
+        } catch (error) {
+            console.error('लोकल स्टोरेज डेटा पार्स करने में त्रुटि:', error);
+            return false;
+        }
+    }
+    return false;
+}
+
+// फंक्शन जो कस्टमर डेटा को डिस्प्ले करता है
+function displayCustomers(allCustomers, selectedMonth) {
+    // ... (आपका displayCustomers फंक्शन)
+    console.log(`displayCustomers called for month: ${selectedMonth}`);
+    morningCustomersDiv.innerHTML = '<h2>सुबह के ग्राहक</h2>';
+    eveningCustomersDiv.innerHTML = '<h2>शाम के ग्राहक</h2>';
+
+    for (const customerId in allCustomers) {
+        const customerData = allCustomers[customerId].customerDetails;
+        const monthlyData = allCustomers[customerId].monthlyData?.[selectedMonth];
+
+        if (customerData && monthlyData) {
+            const customerTable = document.createElement('table');
+            customerTable.className = 'customer-table';
+
+            let thead = customerTable.createTHead();
+            let nameRow = thead.insertRow();
+            let nameCell = nameRow.insertCell();
+            nameCell.colSpan = 5;
+            nameCell.textContent = customerData.Name;
+            nameCell.style.textAlign = 'center';
+            nameCell.style.fontWeight = 'bold';
+            nameCell.style.padding = '10px';
+            nameCell.style.backgroundColor = '#f0f0f0';
+            nameCell.style.color = '#007bff';
+            nameCell.style.borderBottom = '1px solid #ccc';
+
+            let headerRow = thead.insertRow();
+            headerRow.innerHTML = `
+                <th>मोबाइल नंबर</th>
+                <th>मकान नंबर</th>
+                <th>मात्रा (लीटर)</th>
+                <th>अनुपस्थित</th>
+                <th>क्रियाएँ</th>
+            `;
+
+            let tbody = customerTable.createTBody();
+            let dataRow = tbody.insertRow();
+            dataRow.innerHTML = `
+                <td>${customerData.mobileNo}</td>
+                <td>${customerData.houseNo}</td>
+                <td>${monthlyData.quantity}</td>
+                <td>${monthlyData.absentCount || 0}</td>
+                <td class="actions">
+                    
+                    <button class="record-change-btn" data-customer-id="${customerId}" data-selected-month="${selectedMonth}">बदलाव</button>
+                    
+                </td>
+            `;
+
+            if (monthlyData.deliveryTime === "Morning") {
+                morningCustomersDiv.appendChild(customerTable);
+                const marginDiv = document.createElement('div');
+                marginDiv.style.marginBottom = '20px';
+                morningCustomersDiv.appendChild(marginDiv);
+            } else if (monthlyData.deliveryTime === "Evening") {
+                eveningCustomersDiv.appendChild(customerTable);
+                const marginDiv = document.createElement('div');
+                marginDiv.style.marginBottom = '20px';
+                eveningCustomersDiv.appendChild(marginDiv);
+            }
+        }
+    }
+    attachEventListeners();
+}
+
+// फंक्शन जो Firebase से डेटा फ़ेच करता है और लोकल स्टोरेज में सेव करता है
+async function fetchAndStoreCustomers(selectedMonth) {
+    console.log('Firebase से डेटा फ़ेच किया जा रहा है...');
+    const allCustomers = {};
+    const customersRef = collection(db, "Customers");
+    const snapshot = await getDocs(customersRef);
+
+    for (const doc of snapshot.docs) {
+        const customerId = doc.id;
+        const customerData = doc.data();
+        const monthlyDataRef = collection(db, `Customers/${customerId}/monthlyData`);
+        const monthlyDocSnapshot = await getDocs(query(monthlyDataRef, where("__name__", "==", selectedMonth)));
+
+        let monthlyDataForCustomer = {};
+        monthlyDocSnapshot.forEach(monthlyDoc => {
+            monthlyDataForCustomer[monthlyDoc.id] = monthlyDoc.data();
+        });
+
+        allCustomers[customerId] = {
+            customerDetails: customerData,
+            monthlyData: monthlyDataForCustomer
+        };
+    }
+
+    try {
+        localStorage.setItem(CUSTOMER_DATA_KEY, JSON.stringify(allCustomers));
+        localStorage.setItem(CURRENT_MONTH_KEY, selectedMonth);
+        console.log('Firebase डेटा लोकल स्टोरेज में सेव किया गया');
+        displayCustomers(allCustomers, selectedMonth);
+    } catch (error) {
+        console.error('लोकल स्टोरेज में डेटा सेव करने में त्रुटि:', error);
+        displayCustomers(allCustomers, selectedMonth);
+    }
+}
+
+function attachEventListeners() {
+    document.querySelectorAll('.view-details-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const customerId = this.dataset.customerId;
+            viewDetails(customerId);
+        });
+    });
+
+    document.querySelectorAll('.record-change-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const customerId = this.dataset.customerId;
+            const selectedMonth = this.dataset.selectedMonth;
+            recordChange(customerId, selectedMonth);
+        });
+    });
+
+    document.querySelectorAll('.daily-update-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const customerId = this.dataset.customerId;
+            const selectedMonth = this.dataset.selectedMonth;
+            dailyUpdate(customerId, selectedMonth);
+        });
+    });
+}
+
+function viewDetails(customerId) {
+    window.location.href = `customer_detail.html?id=${customerId}`;
+}
+
+function recordChange(customerId, selectedMonth) {
+    window.location.href = `edit_customer.html?id=${customerId}&month=${selectedMonth}`;
+}
+
+function dailyUpdate(customerId, selectedMonth) {
+    window.location.href = `customer_dailyUpdate.html?id=${customerId}&month=${selectedMonth}`;
+}
+
+// महीने के विकल्प बनाना
+const months = [
+    { value: '2025_04', label: 'अप्रैल 2025' },
+    { value: '2025_05', label: 'मई 2025' },
+    { value: '2025_06', label: 'जून 2025' },
+    { value: '2025_07', label: 'जुलाई 2025' },
+    { value: '2025_08', label: 'अगस्त 2025' },
+    { value: '2025_09', label: 'सितंबर 2025' },
+    { value: '2025_10', label: 'अक्टूबर 2025' },
+    { value: '2025_11', label: 'नवंबर 2025' },
+    { value: '2025_12', label: 'दिसंबर 2025' },
+    { value: '2026_01', label: 'जनवरी 2026' },
+    { value: '2026_02', label: 'फरवरी 2026' },
+    { value: '2026_03', label: 'मार्च 2026' },
+    { value: '2026_04', label: 'अप्रैल 2026' }
+];
+
+// DOMContentLoaded पर इनिशियलाइज़ेशन (यह हिस्सा अब लॉगिन स्क्रिप्ट के बाद चलेगा)
+document.addEventListener('DOMContentLoaded', () => {
+    // यह चेक करता है कि क्या उपयोगकर्ता पहले से लॉग इन है।
+    // अगर नहीं, तो लॉगिन मोडल दिखाया जाएगा।
+    // अगर है, तो डैशबोर्ड को इनिशियलाइज़ किया जाएगा।
+    if (sessionStorage.getItem('isLoggedIn') === 'true') {
+        const monthSelectElement = document.getElementById('month-select');
+        if (monthSelectElement) {
+            months.forEach(month => {
+                const option = document.createElement('option');
+                option.value = month.value;
+                option.textContent = month.label;
+                monthSelectElement.appendChild(option);
+            });
+
+            const currentDate = new Date();
+            const currentYear = currentDate.getFullYear();
+            const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+            const initialMonth = `${currentYear}_${currentMonth}`;
+            const storedMonth = localStorage.getItem(CURRENT_MONTH_KEY);
+            const monthToLoad = storedMonth || initialMonth;
+            monthSelectElement.value = monthToLoad;
+
+            loadCustomersFromLocalStorage(monthToLoad);
+            fetchAndStoreCustomers(monthToLoad);
+
+            monthSelectElement.addEventListener('change', (event) => {
+                const selectedMonth = event.target.value;
+                loadCustomersFromLocalStorage(selectedMonth) || fetchAndStoreCustomers(selectedMonth);
+            });
+        }
+    } else {
+        // अगर लॉग इन नहीं है, तो मेन कंटेंट को छुपा दें
+        document.getElementById('mainContent').style.display = 'none';
+    }
+});
+
+</script>
+
+</head>
+<body>
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h2>लॉगिन</h2>
+            <form id="loginForm">
+                <input type="text" id="username" placeholder="उपयोगकर्ता नाम" required>
+                <input type="password" id="password" placeholder="पासवर्ड" required>
+                <div id="loginErrorMessage" class="error-message"></div>
+                <button type="submit">लॉगिन करें</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="mainContent">
+        <h1>दूध व्यवसाय</h1>
+        <div class="button-container">
+            <button class="homebtn" onclick="document.location='DisplayAllCustomers.html'">विवरण</button>
+            <button class="homebtn" onclick="document.location='customer_dailyUpdate.html'">दैनिक अपडेट</button>
+        </div>
+
+        <div class="month-selector">
+            <label for="month-select">महीना चुनें:</label>
+            <select id="month-select"></select>
+        </div>
+
+        <div class="customer-list">
+            <div class="customer-group" id="morning-customers">
+                <h2>सुबह के ग्राहक</h2>
+                <div id="morning-table-container"></div>
+            </div>
+
+            <div class="customer-group" id="evening-customers">
+                <h2>शाम के ग्राहक</h2>
+                <div id="evening-table-container"></div>
+            </div>
+        </div>
+
+        <div class="add-new">
+            <a href="add_customer.html">नया ग्राहक जोड़ें</a>
+        </div>
+    </div>
+
+    <script>
+        // SwipeToLoad.js
+        // (आपका मौजूदा पुल-टू-रिफ्रेश स्क्रिप्ट यहाँ)
+        (function() {
+            // पुल-टू-रिफ्रेश कंटेनर और आइकन को डायनामिक रूप से बनाएं
+            const pullToRefreshDiv = document.createElement('div');
+            pullToRefreshDiv.id = 'pull-to-refresh';
+            pullToRefreshDiv.style.position = 'fixed';
+            pullToRefreshDiv.style.top = '-60px';
+            pullToRefreshDiv.style.left = '0';
+            pullToRefreshDiv.style.width = '100%';
+            pullToRefreshDiv.style.height = '60px';
+            pullToRefreshDiv.style.backgroundColor = '#f0f0f0';
+            pullToRefreshDiv.style.display = 'flex';
+            pullToRefreshDiv.style.justifyContent = 'center';
+            pullToRefreshDiv.style.alignItems = 'center';
+            pullToRefreshDiv.style.opacity = '0';
+            pullToRefreshDiv.style.transition = 'top 0.2s ease-out, opacity 0.2s ease-out';
+            pullToRefreshDiv.style.zIndex = '10';
+
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'icon';
+            iconDiv.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <polyline points="19 12 12 19 5 12"></polyline>
+                </svg>
+            `;
+            pullToRefreshDiv.appendChild(iconDiv);
+
+            // लोडर के लिए स्टाइल
+            const style = document.createElement('style');
+            style.textContent = `
+                #pull-to-refresh .loader {
+                    border: 4px solid #f3f3f3;
+                    border-top: 4px solid #3498db;
+                    border-radius: 50%;
+                    width: 30px;
+                    height: 30px;
+                    animation: spin 2s linear infinite;
+                }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+
+            let pageContent = document.getElementById('mainContent');
+            if (!pageContent) {
+                pageContent = document.createElement('div');
+                pageContent.id = 'mainContent';
+                document.body.appendChild(pageContent);
+                pageContent.style.transition = 'transform 0.2s ease-out';
+            }
+
+            document.body.insertBefore(pullToRefreshDiv, document.body.firstChild);
+
+            const reloadThreshold = 100;
+            const resistance = 0.4;
+            let touchStartY = null;
+            let isTouching = false;
+            let isReloading = false;
+
+            function handleTouchStart(e) {
+                if (window.scrollY === 0 && !isReloading && sessionStorage.getItem('isLoggedIn') === 'true') {
+                    touchStartY = e.touches[0].clientY;
+                    isTouching = true;
+                    pullToRefreshDiv.style.transition = 'none';
+                    pageContent.style.transition = 'none';
+                }
+            }
+
+            function handleTouchMove(e) {
+                if (!isTouching) return;
+
+                const touchCurrentY = e.touches[0].clientY;
+                const pullDistance = touchCurrentY - touchStartY;
+
+                if (pullDistance > 0) {
+                    const translateY = Math.pow(pullDistance, resistance);
+                    pageContent.style.transform = `translateY(${translateY}px)`;
+                    pullToRefreshDiv.style.top = `${pullDistance * resistance}px`;
+                    pullToRefreshDiv.style.opacity = pullDistance * resistance / reloadThreshold;
+                } else {
+                    pageContent.style.transform = `translateY(0px)`;
+                    pullToRefreshDiv.style.top = '-60px';
+                    pullToRefreshDiv.style.opacity = 0;
+                }
+            }
+
+            function handleTouchEnd() {
+                if (!isTouching) return;
+                isTouching = false;
+                pullToRefreshDiv.style.transition = 'top 0.2s ease-out, opacity 0.2s ease-out';
+                pageContent.style.transition = 'transform 0.2s ease-out';
+
+                const currentTop = parseFloat(pullToRefreshDiv.style.top);
+
+                if (currentTop >= reloadThreshold * resistance) {
+                    isReloading = true;
+                    pageContent.style.transform = `translateY(40px)`;
+                    pullToRefreshDiv.style.top = '0px';
+                    pullToRefreshDiv.style.opacity = 1;
+                    iconDiv.innerHTML = '<div class="loader"></div>';
+
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    pageContent.style.transform = `translateY(0px)`;
+                    pullToRefreshDiv.style.top = '-60px';
+                    pullToRefreshDiv.style.opacity = 0;
+                    iconDiv.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <polyline points="19 12 12 19 5 12"></polyline>
+                        </svg>
+                    `;
+                }
+            }
+
+            document.addEventListener('touchstart', handleTouchStart);
+            document.addEventListener('touchmove', handleTouchMove);
+            document.addEventListener('touchend', handleTouchEnd);
+        })();
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+        import { getFirestore, collection, where, getDocs, query } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+        // Your Firebase configuration (इसे अपनी मौजूदा कॉन्फ़िगरेशन से कॉपी करें)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQahkTWLPVDdI_DdEymvyaHoEQxQ3tzHQ",
+            authDomain: "shreedairy-business-app.firebaseapp.com",
+            projectId: "shreedairy-business-app",
+            storageBucket: "shreedairy-business-app.firebasestorage.app",
+            messagingSenderId: "987256641105",
+            appId: "1:987256641105:web:2724c79d634e9159c0ca70",
+            measurementId: "G-7PXSXT5QKD"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Login related elements
+        const loginModal = document.getElementById('loginModal');
+        const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const loginErrorMessage = document.getElementById('loginErrorMessage');
+        const mainContent = document.getElementById('mainContent');
+
+        // Check login status on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+                loginModal.style.display = 'flex'; // Show the modal
+                if (mainContent) mainContent.style.display = 'none'; // Hide main content
+            } else {
+                loginModal.style.display = 'none'; // Hide the modal
+                if (mainContent) mainContent.style.display = 'block'; // Show main content
+                // यदि आप यहां डैशबोर्ड इनिशियलाइज़ेशन फ़ंक्शन को कॉल करना चाहते हैं,
+                // तो आपको उसे इस स्क्रिप्ट में शामिल करना होगा या इसे एक ग्लोबल फ़ंक्शन बनाना होगा
+                // जिसे दोनों स्क्रिप्ट एक्सेस कर सकें।
+                // फ़िलहाल, आपकी मुख्य स्क्रिप्ट DOMContentLoaded पर स्वतः डैशबोर्ड लोड करेगी।
+            }
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent default form submission
+
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+
+            if (!username || !password) {
+                loginErrorMessage.textContent = 'कृपया उपयोगकर्ता नाम और पासवर्ड दोनों दर्ज करें।';
+                return;
+            }
+
+            try {
+                const adminsRef = collection(db, "admins"); // Collection Name: "admins"
+                const q = query(adminsRef, where("username", "==", username)); // Field Name: "username"
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    loginErrorMessage.textContent = 'गलत उपयोगकर्ता नाम या पासवर्ड।';
+                    return;
+                }
+
+                let isAuthenticated = false;
+                querySnapshot.forEach((doc) => {
+                    const adminData = doc.data();
+                    if (adminData.password === password) { // Field Name: "password"
+                        isAuthenticated = true;
+                    }
+                });
+
+                if (isAuthenticated) {
+                    sessionStorage.setItem('isLoggedIn', 'true'); // Store login status
+                    loginModal.style.display = 'none'; // Hide the modal
+                    if (mainContent) mainContent.style.display = 'block'; // Show main content
+                    location.reload(); // पेज को रीलोड करें ताकि मुख्य स्क्रिप्ट डैशबोर्ड को इनिशियलाइज़ कर सके
+                } else {
+                    loginErrorMessage.textContent = 'गलत उपयोगकर्ता नाम या पासवर्ड।';
+                }
+            } catch (error) {
+                console.error("लॉगिन त्रुटि:", error);
+                loginErrorMessage.textContent = 'लॉगिन में कोई त्रुटि हुई। कृपया पुनः प्रयास करें।';
+            }
+        });
+    </script>
+</body>
+</html>

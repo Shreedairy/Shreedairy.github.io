@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>मात्रा परिवर्तन अपडेट</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select,
+        input[type="text"],
+        input[type="date"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            width: 100%;
+            margin-top: 5px;
+        }
+        .quantity-change-section {
+            border: 1px solid #eee;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .quantity-change-item {
+            margin-bottom: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 50px;
+            gap: 10px;
+            align-items: center;
+        }
+        .quantity-change-item label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .add-change-button {
+            padding: 10px 15px;
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        .remove-change-button {
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 8px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .customer-select-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .customer-select-container h2 {
+            margin-top: 0;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>मात्रा परिवर्तन अपडेट</h2>
+        <div class="customer-select-container">
+            <h2>ग्राहक चुनें</h2>
+            <select id="customerList">
+                <option value="">ग्राहक चुनें</option>
+            </select>
+            <h2>महीना चुनें</h2>
+            <select id="monthList">
+                <option value="">महीना चुनें</option>
+                <option value="2025_04">अप्रैल 2025</option>
+                <option value="2025_05">मई 2025</option>
+            </select>
+        </div>
+        <div class="quantity-change-section">
+            <h3>मात्रा परिवर्तन</h3>
+            <div id="quantityChangesContainer">
+                </div>
+            <button type="button" class="add-change-button">नया परिवर्तन जोड़ें</button>
+        </div>
+        <button class="save-changes-button">परिवर्तन सहेजें</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, getDocs, collection, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQahkTWLPVDdI_DdEymvyaHoEQxQ3tzHQ",
+            authDomain: "shreedairy-business-app.firebaseapp.com",
+            projectId: "shreedairy-business-app",
+            storageBucket: "shreedairy-business-app.firebasestorage.app",
+            messagingSenderId: "987256641105",
+            appId: "1:987256641105:web:2724c79d634e9159c0ca70",
+            measurementId: "G-7PXSXT5QKD"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Get customer list for the dropdown
+        async function fetchCustomerNames() {
+            const customersCollection = collection(db, 'Customers');
+            const snapshot = await getDocs(customersCollection);
+            const customerList = document.getElementById('customerList');
+            customerList.innerHTML = '<option value="">ग्राहक चुनें</option>'; // Clear existing options
+            snapshot.forEach(doc => {
+                const customerData = doc.data();
+                const option = document.createElement('option');
+                option.value = doc.id;
+                option.textContent = customerData.Name;
+                customerList.appendChild(option);
+            });
+        }
+
+        fetchCustomerNames();
+
+        // Function to load monthly data for the selected customer and month
+        async function loadCustomerMonthlyData(customerId, month) {
+            if (!customerId || !month) {
+                document.getElementById('quantityChangesContainer').innerHTML = '';
+                return;
+            }
+
+            const customerDocRef = doc(db, 'Customers', customerId);
+            const monthlyDataDocRef = doc(customerDocRef, 'monthlyData', month);
+            const docSnap = await getDoc(monthlyDataDocRef);
+
+            if (docSnap.exists()) {
+                const monthlyData = docSnap.data();
+                renderExistingQuantityChanges(monthlyData.quantityChanges || [], customerId, month);
+            } else {
+                document.getElementById('quantityChangesContainer').innerHTML = '';
+            }
+        }
+
+        function renderExistingQuantityChanges(quantityChanges, customerId, month) {
+            const container = document.getElementById('quantityChangesContainer');
+            container.innerHTML = '<h3>मौजूदा मात्रा परिवर्तन</h3>'; // Clear existing content
+
+            if (quantityChanges && quantityChanges.length > 0) {
+                quantityChanges.forEach((change, index) => {
+                    const changeDiv = document.createElement('div');
+                    changeDiv.className = 'quantity-change-item';
+                    changeDiv.innerHTML = `
+                        <div>
+                            <label for="type_existing_${index}">प्रकार:</label>
+                            <select id="type_existing_${index}">
+                                <option value="+" ${change.change > 0 ? 'selected' : ''}>वृद्धि</option>
+                                <option value="-" ${change.change < 0 ? 'selected' : ''}>कमी</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="change_existing_${index}">मात्रा:</label>
+                            <input type="text" id="change_existing_${index}" value="${Math.abs(change.change)}" required>
+                        </div>
+                        <div>
+                            <label for="date_existing_${index}">शुरुआत:</label>
+                            <input type="date" id="date_existing_${index}" value="${change.date}" required>
+                        </div>
+                        <div>
+                            <label for="endDate_existing_${index}">समाप्ति (वैकल्पिक):</label>
+                            <input type="date" id="endDate_existing_${index}" value="${change.endDate || ''}">
+                        </div>
+                        <button type="button" class="update-change-button" data-index="${index}">अपडेट करें</button>
+                        <button type="button" class="remove-change-button" data-index="${index}">हटाएँ</button>
+                    `;
+                    container.appendChild(changeDiv);
+                });
+
+                // Attach event listeners for update and remove buttons
+                const updateButtons = document.querySelectorAll('.update-change-button');
+                updateButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const indexToUpdate = parseInt(this.dataset.index);
+                        updateExistingQuantityChange(indexToUpdate, customerId, month, quantityChanges);
+                    });
+                });
+
+                const removeButtons = document.querySelectorAll('.remove-change-button');
+                removeButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const indexToRemove = parseInt(this.dataset.index);
+                        removeExistingQuantityChange(indexToRemove, customerId, month, quantityChanges);
+                    });
+                });
+
+            } else {
+                const noChangesMessage = document.createElement('p');
+                noChangesMessage.textContent = 'कोई मौजूदा मात्रा परिवर्तन नहीं है।';
+                container.appendChild(noChangesMessage);
+            }
+        }
+
+        async function updateExistingQuantityChange(indexToUpdate, customerId, month, existingChanges) {
+            const typeSelect = document.getElementById(`type_existing_${indexToUpdate}`);
+            const changeInput = document.getElementById(`change_existing_${indexToUpdate}`);
+            const dateInput = document.getElementById(`date_existing_${indexToUpdate}`);
+            const endDateInput = document.getElementById(`endDate_existing_${indexToUpdate}`);
+
+            if (typeSelect && changeInput && dateInput && changeInput.value && dateInput.value) {
+                const changeValue = parseFloat(changeInput.value);
+                const updatedChange = {
+                    change: typeSelect.value === '+' ? changeValue : -changeValue,
+                    date: dateInput.value,
+                    endDate: endDateInput.value || null
+                };
+
+                const customerDocRef = doc(db, 'Customers', customerId);
+                const monthlyDataDocRef = doc(customerDocRef, 'monthlyData', month);
+
+                // Create a new array with the updated change
+                const updatedQuantityChanges = existingChanges.map((change, index) =>
+                    index === indexToUpdate ? updatedChange : change
+                );
+
+                try {
+                    await updateDoc(monthlyDataDocRef, {
+                        quantityChanges: updatedQuantityChanges
+                    });
+                    alert('मात्रा परिवर्तन अपडेट किया गया।');
+                    loadCustomerMonthlyData(customerId, month); // Reload data to reflect changes
+                } catch (error) {
+                    console.error("मात्रा परिवर्तन अपडेट करने में त्रुटि:", error);
+                    alert('मात्रा परिवर्तन अपडेट करने में विफल।');
+                }
+            } else {
+                alert('कृपया सभी आवश्यक फ़ील्ड भरें।');
+            }
+        }
+
+        async function removeExistingQuantityChange(indexToRemove, customerId, month, existingChanges) {
+            if (confirm('क्या आप वाकई इस मात्रा परिवर्तन को हटाना चाहते हैं?')) {
+                const customerDocRef = doc(db, 'Customers', customerId);
+                const monthlyDataDocRef = doc(customerDocRef, 'monthlyData', month);
+                const changeToRemove = existingChanges[indexToRemove];
+
+                try {
+                    await updateDoc(monthlyDataDocRef, {
+                        quantityChanges: arrayRemove(changeToRemove)
+                    });
+                    alert('मात्रा परिवर्तन हटाया गया।');
+                    loadCustomerMonthlyData(customerId, month); // Reload data to reflect changes
+                } catch (error) {
+                    console.error("मात्रा परिवर्तन हटाने में त्रुटि:", error);
+                    alert('मात्रा परिवर्तन हटाने में विफल।');
+                }
+            }
+        }
+
+        let quantityChangeCounter = 0;
+        const newQuantityChangesContainer = document.getElementById('quantityChangesContainer');
+        const addNewChangeSection = document.createElement('div');
+        addNewChangeSection.innerHTML = `
+            <h3>नया मात्रा परिवर्तन जोड़ें</h3>
+            <div id="newQuantityChangeForm">
+                <div>
+                    <label for="type_new">प्रकार:</label>
+                    <select id="type_new">
+                        <option value="+">वृद्धि</option>
+                        <option value="-">कमी</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="change_new">मात्रा:</label>
+                    <input type="text" id="change_new" required>
+                </div>
+                <div>
+                    <label for="date_new">शुरुआत:</label>
+                    <input type="date" id="date_new" required>
+                </div>
+                <div>
+                    <label for="endDate_new">समाप्ति (वैकल्पिक):</label>
+                    <input type="date" id="endDate_new">
+                </div>
+                <button type="button" class="add-new-change-button">जोड़ें</button>
+            </div>
+        `;
+        document.querySelector('.quantity-change-section').appendChild(addNewChangeSection);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const customerListDropdown = document.getElementById('customerList');
+            const monthListDropdown = document.getElementById('monthList');
+            if (customerListDropdown && monthListDropdown) {
+                customerListDropdown.addEventListener('change', () => {
+                    loadCustomerMonthlyData(customerListDropdown.value, monthListDropdown.value);
+                });
+                monthListDropdown.addEventListener('change', () => {
+                    loadCustomerMonthlyData(customerListDropdown.value, monthListDropdown.value);
+                });
+            }
+
+            const addNewChangeButton = document.querySelector('.add-new-change-button');
+            if (addNewChangeButton) {
+                addNewChangeButton.addEventListener('click', addNewQuantityChange);
+            }
+
+            const saveChangesButton = document.querySelector('.save-changes-button');
+            if (saveChangesButton) {
+                saveChangesButton.addEventListener('click', addNewQuantityChange); // Reusing this for adding new
+            }
+        });
+
+        async function addNewQuantityChange() {
+            const customerId = document.getElementById('customerList').value;
+            const selectedMonth = document.getElementById('monthList').value;
+            const typeSelect = document.getElementById('type_new');
+            const changeInput = document.getElementById('change_new');
+            const dateInput = document.getElementById('date_new');
+            const endDateInput = document.getElementById('endDate_new');
+
+            if (!customerId || !selectedMonth) {
+                alert('कृपया ग्राहक और महीना चुनें।');
+                return;
+            }
+
+            if (typeSelect && changeInput && dateInput && changeInput.value && dateInput.value) {
+                const changeValue = parseFloat(changeInput.value);
+                const newChange = {
+                    change: typeSelect.value === '+' ? changeValue : -changeValue,
+                    date: dateInput.value,
+                    endDate: endDateInput.value || null
+                };
+
+                const customerDocRef = doc(db, 'Customers', customerId);
+                const monthlyDataDocRef = doc(customerDocRef, 'monthlyData', selectedMonth);
+
+                try {
+                    await updateDoc(monthlyDataDocRef, {
+                        quantityChanges: arrayUnion(newChange)
+                    });
+                    alert('नया मात्रा परिवर्तन जोड़ा गया।');
+                    loadCustomerMonthlyData(customerId, selectedMonth); // Reload data
+                    // Clear the new change form
+                    changeInput.value = '';
+                    endDateInput.value = '';
+                } catch (error) {
+                    console.error("नया मात्रा परिवर्तन जोड़ने में त्रुटि:", error);
+                    alert('नया मात्रा परिवर्तन जोड़ने में विफल।');
+                }
+            } else {
+                alert('कृपया नए परिवर्तन के लिए सभी आवश्यक फ़ील्ड भरें।');
+            }
+        }
+
+        async function saveQuantityChanges() {
+            alert('यह बटन अब नए परिवर्तन जोड़ने के लिए है। मौजूदा परिवर्तनों को अपडेट/हटाने के लिए उनके संबंधित बटनों का उपयोग करें।');
+        }
+    </script>
+
+</body>
+</html>

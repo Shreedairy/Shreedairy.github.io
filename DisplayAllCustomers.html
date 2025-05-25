@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Milk Customer Tracker</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+    }
+    header, .container {
+      padding: 1rem;
+    }
+    header {
+      background: #009879;
+      color: white;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2, h3 {
+      margin: 0.5rem 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    button, select, input {
+      padding: 0.4rem;
+      margin: 0.3rem;
+    }
+    .summary {
+      margin-top: 1rem;
+    }
+    .customer-info {
+      background: #f9f9f9;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-left: 4px solid #009879;
+    }
+    .customer-info p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    .customer-info span {
+      font-weight: bold;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 5px;
+    }
+    /* CSS for the customer selection dropdown */
+    .customer-select-container {
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #e9e9e9;
+      border-radius: 5px;
+    }
+    #customerList, #monthList {
+      padding: 0.4rem;
+      margin: 0.3rem;
+    }
+    #whatsappShare {
+    display: none;
+    background-color: #25D366;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: all 0.3s;
+  }
+
+  #whatsappShare:hover {
+    background-color: #128C7E;
+    transform: scale(1.05);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+  #editCustomerLink, #dailyUpdateLink, #whatsappShare {
+  display: inline-block;
+  padding: 10px 15px;
+  margin-right: 10px; /* बटनों के बीच स्पेस */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+  text-decoration: none;
+  color: white;
+}
+
+#editCustomerLink {
+  background-color: #5cb85c; /* हरा */
+}
+
+#dailyUpdateLink {
+  background-color: #007bff; /* नीला */
+}
+
+#whatsappShare {
+  background-color: #25d366; /* WhatsApp हरा */
+  color: white;
+}
+
+#editCustomerLink:hover {
+  background-color: #4cae4c;
+}
+
+#dailyUpdateLink:hover {
+  background-color: #0056b3;
+}
+
+#whatsappShare:hover {
+  background-color: #128c7e;
+}
+
+#editCustomerLink span, #dailyUpdateLink span, #whatsappShare span {
+  vertical-align: middle;
+}
+
+#editCustomerLink span::before {
+  content: '✏️ '; /* पेंसिल आइकन */
+}
+
+#dailyUpdateLink span::before {
+  content: '📅 '; /* कैलेंडर आइकन */
+}
+
+#whatsappShare span::before {
+  content: '📱 '; /* फ़ोन आइकन */
+}
+
+/* कंटेनर div के लिए थोड़ी सी मार्जिन */
+#buttonContainer {
+  margin-bottom: 10px;
+}
+
+  </style>
+  
+  
+</head>
+<body>
+  <header>
+    <h1>Milk Customer Tracker</h1>
+  </header>
+  <div class="container">
+    <div class="customer-select-container">
+      <h2>Select Customer</h2>
+      <select id="customerList" onchange="loadCustomerMonthlyData(this.value, document.getElementById('monthList').value)">
+        <option value="">Select a customer</option>
+      </select>
+      <h2>Select Month</h2>
+      <select id="monthList" onchange="loadCustomerMonthlyData(document.getElementById('customerList').value, this.value)">
+        <option value="">Select a month</option>
+        <option value="2025_04">April 2025</option>
+        <option value="2025_05">May 2025</option>
+      </select>
+    </div>
+    <div class="filters">
+      <h2>Functions</h2>
+      <div>
+      <div style="margin-bottom: 10px;">
+        <a id="editCustomerLink" href="#"><span>Edit Customer</span></a>
+        <a id="dailyUpdateLink" href="#"><span>Daily Update</span></a>
+        <div id="buttonContainer"></div>
+      </div>
+      </div>
+    </div>
+
+    <div id="customerContainer"></div>
+  </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+  // Your Firebase initialization
+  const firebaseConfig = {
+      apiKey: "AIzaSyAQahkTWLPVDdI_DdEymvyaHoEQxQ3tzHQ",
+      authDomain: "shreedairy-business-app.firebaseapp.com",
+      projectId: "shreedairy-business-app",
+      storageBucket: "shreedairy-business-app.firebasestorage.app",
+      messagingSenderId: "987256641105",
+      appId: "1:987256641105:web:2724c79d634e9159c0ca70",
+      measurementId: "G-7PXSXT5QKD"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const RATE_PER_LITER = 70;
+
+  async function fetchCustomers() {
+    const customersCollection = collection(db, 'Customers');
+    const snapshot = await getDocs(customersCollection);
+    const customers = [];
+    snapshot.forEach(doc => {
+      customers.push({ id: doc.id, ...doc.data() });
+    });
+    populateCustomerDropdown(customers);
+  }
+
+  // ... आपका मौजूदा JavaScript कोड ...
+
+  function populateCustomerDropdown(customers) {
+    const customerList = document.getElementById('customerList');
+    customerList.innerHTML = '<option value="">Select a customer</option>';
+    customers.forEach(customer => {
+      const option = document.createElement('option');
+      option.value = customer.id;
+      option.textContent = customer.Name;
+      customerList.appendChild(option);
+    });
+
+    // ग्राहक चयन पर इवेंट लिसनर अटैच करें
+    customerList.addEventListener('change', function() {
+      const customerId = this.value;
+      const month = document.getElementById('monthList').value;
+      loadCustomerMonthlyData(customerId, month);
+
+      // नए बटनों के href अपडेट करें
+      const editCustomerLink = document.getElementById('editCustomerLink');
+      const dailyUpdateLink = document.getElementById('dailyUpdateLink');
+
+      if (customerId) {
+        editCustomerLink.href = `edit_customer.html?id=${customerId}`;
+        dailyUpdateLink.href = `customer_dailyUpdate.html?id=${customerId}`;
+      } else {
+        editCustomerLink.href = '#';
+        dailyUpdateLink.href = '#';
+      }
+    });
+  }
+
+
+  async function loadCustomerMonthlyData(customerId, month) {
+    const customerContainer = document.getElementById('customerContainer');
+    customerContainer.innerHTML = '<p>Loading data...</p>';
+    dailyStatuses = {}; // रीलोड पर दैनिक स्टेटस रीसेट करें
+
+    if (!customerId || !month) {
+      customerContainer.innerHTML = '<p>Please select a customer and a month.</p>';
+      return;
+    }
+
+    const customerDocRef = doc(db, 'Customers', customerId);
+    const monthlyDataDocRef = doc(customerDocRef, 'monthlyData', month);
+
+    try {
+      const monthlyDataSnap = await getDoc(monthlyDataDocRef);
+      const customerDataSnap = await getDoc(customerDocRef);
+
+      if (monthlyDataSnap.exists() && customerDataSnap.exists()) {
+        const customerData = customerDataSnap.data();
+        const monthlyData = monthlyDataSnap.data();
+        const returnedDates = monthlyData.returnedDates || [];
+        const paidDates = monthlyData.paidDates || [];
+
+        // लोड किए गए डेटा से दैनिक स्टेटस पॉप्युलेट करें
+        const startDate = new Date(monthlyData.startDate);
+        const endDateOfMonth = new Date(new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0));
+        let currentDate = new Date(startDate);
+
+        while (currentDate <= endDateOfMonth) {
+          const displayDate = formatDateToDDMMYYYY(currentDate);
+          const formattedDateYYYYMMDD = formatDateToYYYYMMDD(currentDate);
+          const key = `${customerId}_${month}_${displayDate}`;
+          dailyStatuses[key] = {};
+          if (returnedDates.includes(formattedDateYYYYMMDD)) {
+            dailyStatuses[key].returned = true;
+          }
+          if (paidDates.includes(formattedDateYYYYMMDD)) {
+            dailyStatuses[key].paid = true;
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        displayCustomerData(customerData, monthlyData, month);
+
+        // महीने का आखिरी दिन है या नहीं, इसकी जांच करें
+        const today = new Date();
+        if (today.toDateString() === endDateOfMonth.toDateString()) {
+          const returnCount = returnedDates.length;
+          const paidCount = paidDates.length;
+          const totalDaysInMonth = endDateOfMonth.getDate();
+          let paymentStatus = 'due';
+          if (paidCount === totalDaysInMonth) {
+            paymentStatus = 'paid';
+          }
+
+          await updateDoc(monthlyDataDocRef, {
+            returnCount: returnCount,
+            paidCount: paidCount,
+            paymentStatus: paymentStatus
+          });
+          console.log('Monthly status updated:', { returnCount, paidCount, paymentStatus });
+        }
+
+      } else {
+        customerContainer.innerHTML = '<p>No data found for the selected month or customer.</p>';
+      }
+    } catch (error) {
+      console.error("Error fetching customer data:", error);
+      customerContainer.innerHTML = '<p>Failed to load data.</p>';
+    }
+  }
+
+  function displayCustomerData(customerInfo, monthlyData, month) {
+    const container = document.getElementById('customerContainer');
+    container.innerHTML = '';
+
+    const customerDetailsHTML = `
+      <div class="customer-info">
+        <p><span>Customer Name:</span> ${customerInfo.Name}</p>
+        <p><span>House No.:</span> ${customerInfo.houseNo}</p>
+        <p><span>Mobile No.:</span> ${customerInfo.mobileNo}</p>
+        <p><span>Delivery Time:</span> ${monthlyData.deliveryTime}</p>
+        <p><span>Start Date:</span> ${monthlyData.startDate}</p>
+        <p><span>Stop Date:</span> ${monthlyData.stopDate || 'Ongoing'}</p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Liters</th>
+            <th>Returned</th>
+            <th>Absent</th>
+            <th>Paid</th>
+          </tr>
+        </thead>
+        <tbody id="deliveryRows">
+        </tbody>
+      </table>
+      <div class="summary">
+        <strong id="totalLitersDisplayed">Total Liters:</strong> |
+        <strong id="totalBillDisplayed">Total Bill:</strong> |
+        <strong>Absent Days:</strong> ${monthlyData.absentCount || 0}
+      </div>
+
+    `;
+
+    container.innerHTML = customerDetailsHTML;
+    const deliveryRowsTbody = document.getElementById('deliveryRows');
+    renderDailyData(customerInfo, monthlyData, month, deliveryRowsTbody);
+  }
+
+  let dailyStatuses = {}; // To store returned and paid status for each day
+
+  async function toggleAbsent(span) {
+    if (confirm("क्या आप वाकई इस दिन को अनुपस्थित चिह्नित करना चाहते हैं?")) {
+      const row = span.parentNode.parentNode;
+      const dateDDMMYYYY = row.cells[0].textContent;
+      const [day, month, year] = dateDDMMYYYY.split('/');
+      const dateYYYYMMDD = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const customerId = document.getElementById('customerList').value;
+      const selectedMonth = document.getElementById('monthList').value;
+      const customerDocRef = doc(db, 'Customers', customerId);
+      const monthlyDataDocRef = doc(customerDocRef, 'monthlyData', selectedMonth);
+      const litersCell = row.cells[1];
+
+      try {
+        const monthlyDataSnap = await getDoc(monthlyDataDocRef);
+        if (monthlyDataSnap.exists()) {
+          const existingData = monthlyDataSnap.data();
+          let absentDates = existingData.absentDates || [];
+          let absentCount = existingData.absentCount || 0;
+          const isCurrentlyAbsent = absentDates.includes(dateYYYYMMDD);
+
+          if (!isCurrentlyAbsent) {
+            absentDates.push(dateYYYYMMDD);
+            absentCount += 1;
+            span.textContent = '✔️';
+            litersCell.textContent = '0.0'; // लीटर को 0 करें
+
+            await updateDoc(monthlyDataDocRef, {
+              absentDates: absentDates,
+              absentCount: absentCount
+            });
+            console.log('Absent status updated:', dateYYYYMMDD, absentDates, absentCount);
+          } else {
+            const index = absentDates.indexOf(dateYYYYMMDD);
+            if (index > -1) {
+              absentDates.splice(index, 1);
+              absentCount -= 1;
+              span.textContent = '❌';
+              // आपको लीटर की पिछली वैल्यू को ट्रैक करने की आवश्यकता हो सकती है यदि आप इसे वापस लाना चाहते हैं
+              // अभी के लिए, हम इसे 0 ही रहने देते हैं जब अनुपस्थित चिह्नित किया गया था
+              console.log('Absent status removed:', dateYYYYMMDD, absentDates, absentCount);
+              await updateDoc(monthlyDataDocRef, {
+                absentDates: absentDates,
+                absentCount: absentCount
+              });
+            }
+          }
+          // UI को अपडेट करें
+          const summaryAbsent = document.querySelector('.summary strong:last-child');
+          if (summaryAbsent) {
+            summaryAbsent.textContent = `Absent Days: ${absentCount}`;
+          }
+          // रेंडर डेली डेटा को फिर से कॉल करें ताकि कुल लीटर और बिल अपडेट हो सकें
+          const customerInfo = {}; // renderDailyData को ग्राहक की पूरी जानकारी की आवश्यकता नहीं है
+          const month = document.getElementById('monthList').value;
+          const tbody = document.getElementById('deliveryRows');
+          const updatedMonthlyDataSnap = await getDoc(monthlyDataDocRef);
+          if (updatedMonthlyDataSnap.exists()) {
+            renderDailyData(customerInfo, updatedMonthlyDataSnap.data(), month, tbody);
+          }
+
+        } else {
+          await setDoc(monthlyDataDocRef, {
+            absentDates: [dateYYYYMMDD],
+            absentCount: 1
+          }, { merge: true });
+          span.textContent = '✔️';
+          litersCell.textContent = '0.0';
+          console.log('Absent status initialized:', [dateYYYYMMDD], 1);
+          // UI को अपडेट करें
+          const summaryAbsent = document.querySelector('.summary strong:last-child');
+          if (summaryAbsent) {
+            summaryAbsent.textContent = `Absent Days: 1`;
+          }
+          // रेंडर डेली डेटा को फिर से कॉल करें ताकि कुल लीटर और बिल अपडेट हो सकें
+          const customerInfo = {}; // renderDailyData को ग्राहक की पूरी जानकारी की आवश्यकता नहीं है
+          const month = document.getElementById('monthList').value;
+          const tbody = document.getElementById('deliveryRows');
+          const updatedMonthlyDataSnap = await getDoc(monthlyDataDocRef);
+          if (updatedMonthlyDataSnap.exists()) {
+            renderDailyData(customerInfo, updatedMonthlyDataSnap.data(), month, tbody);
+          }
+        }
+      } catch (error) {
+        console.error('Error updating absent status:', error);
+      }
+    }
+  }
+
+  function renderDailyData(customerInfo, monthlyData, month, tbody) {
+    tbody.innerHTML = '';
+    const startDate = new Date(monthlyData.startDate);
+    const endDate = month.endsWith('04') ? new Date('2025-04-30') : new Date(); // For April, use end of month, otherwise today
+    const currentDate = new Date(startDate);
+    const quantity = parseFloat(monthlyData.quantity);
+    const quantityChanges = monthlyData.quantityChanges || []; // सही फ़ील्ड नाम का उपयोग करें
+    const customerId = document.getElementById('customerList').value; // customerId प्राप्त करें
+    let tL = 0;
+
+    while (currentDate <= endDate) {
+      let dailyLiters = quantity; // डिफ़ॉल्ट वैल्यू से शुरू करें
+      const formattedDateYYYYMMDD = formatDateToYYYYMMDD(currentDate);
+      const displayDate = formatDateToDDMMYYYY(currentDate);
+      const key = `${customerId}_${month}_${displayDate}`;
+      const isReturned = dailyStatuses[key]?.returned || false;
+      const isPaid = dailyStatuses[key]?.paid || false;
+      const isAbsent = monthlyData.absentDates && Array.isArray(monthlyData.absentDates) && monthlyData.absentDates.includes(formattedDateYYYYMMDD);
+
+      // लागू क्वांटिटी परिवर्तन खोजें
+      quantityChanges.forEach(changeEntry => {
+        const changeDate = new Date(changeEntry.date);
+        const changeEndDate = changeEntry.endDate ? new Date(changeEntry.endDate) : new Date('2100-01-01'); // यदि कोई एंड डेट नहीं है, तो हमेशा लागू
+
+        if (currentDate >= changeDate && currentDate <= changeEndDate) {
+          dailyLiters += parseFloat(changeEntry.change);
+        }
+      });
+
+      if (!isAbsent) {
+        tL += dailyLiters;
+      }
+
+
+      const row = tbody.insertRow();
+      const dateCell = row.insertCell();
+      const litersCell = row.insertCell();
+      const returnedCell = row.insertCell();
+      const absentCell = row.insertCell();
+      const paidCell = row.insertCell();
+
+      dateCell.textContent = displayDate;
+      litersCell.textContent = isAbsent ? '0.0' : dailyLiters.toFixed(1); // अगर अनुपस्थित है तो लीटर 0 दिखाएँ
+
+      const returnedSpan = document.createElement('span');
+      returnedSpan.textContent = isReturned ? '✔️' : '❌';
+      returnedSpan.style.cursor = 'pointer';
+      returnedSpan.addEventListener('click', function() {
+        toggleReturned(this);
+      });
+      returnedCell.appendChild(returnedSpan);
+
+      const absentSpan = document.createElement('span');
+      absentSpan.innerHTML = `<span style="cursor: pointer;">${isAbsent ? '✔️' : '❌'}</span>`;
+      absentSpan.addEventListener('click', function() {
+        toggleAbsent(this);
+      });
+      absentCell.appendChild(absentSpan);
+
+      const paidSpan = document.createElement('span');
+      paidSpan.textContent = isPaid ? '✔️' : '❌';
+      paidSpan.style.cursor = 'pointer';
+      paidSpan.addEventListener('click', function() {
+        togglePaid(this);
+      });
+      paidCell.appendChild(paidSpan);
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // सारांश में कुल लीटर प्रदर्शित करें
+    document.getElementById('totalLitersDisplayed').textContent = `Total Liters: ${tL.toFixed(1)}`;
+    const tB = tL * 70;
+    document.getElementById('totalBillDisplayed').textContent = `Total Bill: ${tB.toFixed(1)}`;
+
+    // Absent Days को सारांश में अपडेट करने की आवश्यकता नहीं है क्योंकि यह toggleAbsent में ही हो रहा है
+  }
+
+
+
+
+  function formatDateToYYYYMMDD(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function formatDateToDDMMYYYY(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${day}/${month}/${year}`;
+  }
+
+  async function toggleReturned(span) {
+    const dateDDMMYYYY = span.parentNode.parentNode.cells[0].textContent;
+    const [day, month, year] = dateDDMMYYYY.split('/');
+    const dateYYYYMMDD = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    const customerId = document.getElementById('customerList').value;
+    const selectedMonth = document.getElementById('monthList').value;
+    const customerDocRef = doc(db, 'Customers', customerId);
+    const monthlyDataDocRef = doc(customerDocRef, 'monthlyData', selectedMonth);
+
+    try {
+      const monthlyDataSnap = await getDoc(monthlyDataDocRef);
+      if (monthlyDataSnap.exists()) {
+        const existingData = monthlyDataSnap.data();
+        const returnedDates = existingData.returnedDates || [];
+        const dateIndex = returnedDates.indexOf(dateYYYYMMDD);
+
+        if (dateIndex > -1) {
+          returnedDates.splice(dateIndex, 1); // तारीख हटाएं यदि पहले से मौजूद है
+          span.textContent = '❌';
+          const displayKey = `${customerId}_${selectedMonth}_${dateDDMMYYYY}`;
+          if (dailyStatuses[displayKey]) {
+            dailyStatuses[displayKey].returned = false;
+          }
+        } else {
+          returnedDates.push(dateYYYYMMDD); // तारीख जोड़ें यदि मौजूद नहीं है
+          span.textContent = '✔️';
+          const displayKey = `${customerId}_${selectedMonth}_${dateDDMMYYYY}`;
+          if (!dailyStatuses[displayKey]) {
+            dailyStatuses[displayKey] = {};
+          }
+          dailyStatuses[displayKey].returned = true;
+        }
+
+        await updateDoc(monthlyDataDocRef, { returnedDates: returnedDates });
+        console.log('Returned dates updated in Firestore:', returnedDates);
+      } else {
+        await setDoc(monthlyDataDocRef, { returnedDates: [dateYYYYMMDD] }, { merge: true });
+        span.textContent = '✔️';
+        const displayKey = `${customerId}_${selectedMonth}_${dateDDMMYYYY}`;
+        if (!dailyStatuses[displayKey]) {
+          dailyStatuses[displayKey] = {};
+        }
+        dailyStatuses[displayKey].returned = true;
+        console.log('Returned dates initialized in Firestore:', [dateYYYYMMDD]);
+      }
+    } catch (error) {
+      console.error('Error updating returned status:', error);
+    }
+  }
+
+  async function togglePaid(span) {
+    const dateDDMMYYYY = span.parentNode.parentNode.cells[0].textContent;
+    const [day, month, year] = dateDDMMYYYY.split('/');
+    const dateYYYYMMDD = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    const customerId = document.getElementById('customerList').value;
+    const selectedMonth = document.getElementById('monthList').value;
+    const customerDocRef = doc(db, 'Customers', customerId);
+    const monthlyDataDocRef = doc(customerDocRef, 'monthlyData', selectedMonth);
+
+    try {
+      const monthlyDataSnap = await getDoc(monthlyDataDocRef);
+      if (monthlyDataSnap.exists()) {
+        const existingData = monthlyDataSnap.data();
+        const paidDates = existingData.paidDates || [];
+        const dateIndex = paidDates.indexOf(dateYYYYMMDD);
+
+        if (dateIndex > -1) {
+          paidDates.splice(dateIndex, 1); // तारीख हटाएं यदि पहले से मौजूद है
+          span.textContent = '❌';
+          const displayKey = `${customerId}_${selectedMonth}_${dateDDMMYYYY}`;
+          if (dailyStatuses[displayKey]) {
+            dailyStatuses[displayKey].paid = false;
+          }
+        } else {
+          paidDates.push(dateYYYYMMDD); // तारीख जोड़ें यदि मौजूद नहीं है
+          span.textContent = '✔️';
+          const displayKey = `${customerId}_${selectedMonth}_${dateDDMMYYYY}`;
+          if (!dailyStatuses[displayKey]) {
+            dailyStatuses[displayKey] = {};
+          }
+          dailyStatuses[displayKey].paid = true;
+        }
+
+        await updateDoc(monthlyDataDocRef, { paidDates: paidDates });
+        console.log('Paid dates updated in Firestore:', paidDates);
+      } else {
+        await setDoc(monthlyDataDocRef, { paidDates: [dateYYYYMMDD] }, { merge: true });
+        span.textContent = '✔️';
+        const displayKey = `${customerId}_${selectedMonth}_${dateDDMMYYYY}`;
+        if (!dailyStatuses[displayKey]) {
+          dailyStatuses[displayKey] = {};
+        }
+        dailyStatuses[displayKey].paid = true;
+        console.log('Paid dates initialized in Firestore:', [dateYYYYMMDD]);
+      }
+    } catch (error) {
+      console.error('Error updating paid status:', error);
+    }
+  }
+
+  function filterCustomer() {
+    // Implement house number and time filter if needed
+    console.log("Filter function called");
+  }
+
+  const customerListDropdown = document.getElementById('customerList');
+  const monthListDropdown = document.getElementById('monthList');
+
+  // Attach event listener for month selection
+  monthListDropdown.addEventListener('change', function() {
+    const customerId = document.getElementById('customerList').value;
+    const month = this.value;
+    loadCustomerMonthlyData(customerId, month);
+  });
+
+  // Initial fetch of customers
+  fetchCustomers();
+
+</script>
+
+<script type="module">
+  import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+
+  // Firebase कॉन्फ़िगरेशन (सुनिश्चित करें कि यह आपके मुख्य स्क्रिप्ट जैसा ही है)
+  const firebaseConfig = {
+    apiKey: "AIzaSyAQahkTWLPVDdI_DdEymvyaHoEQxQ3tzHQ",
+    authDomain: "shreedairy-business-app.firebaseapp.com",
+    projectId: "shreedairy-business-app",
+    storageBucket: "shreedairy-business-app.firebasestorage.app",
+    messagingSenderId: "987256641105",
+    appId: "1:987256641105:web:2724c79d634e9159c0ca70",
+    measurementId: "G-7PXSXT5QKD"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  async function WhatsAppsharebtn(deliveryTime, customerId, month) {
+    if (!customerId || !month) {
+      alert('कृपया WhatsApp पर शेयर करने से पहले एक ग्राहक और महीना चुनें।');
+      return;
+    }
+
+    const customersCollection = collection(db, 'Customers');
+    const snapshot = await getDocs(customersCollection);
+    const customersData = [];
+    snapshot.forEach(doc => {
+      customersData.push({ id: doc.id, ...doc.data() });
+    });
+
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const currentMonthYear = month; // अब सीधे पास किए गए महीने का उपयोग करें
+
+    let message = `🥛 *Milk Delivery List - ${deliveryTime}* 🥛\n`;
+    message += `📆 *${formattedDate}*\n\n`;
+
+    let deliveryList = [];
+
+    for (const customer of customersData) {
+      const monthlyDataDocRef = doc(db, 'Customers', customer.id, 'monthlyData', currentMonthYear);
+      const monthlyDataSnap = await getDoc(monthlyDataDocRef);
+
+      if (monthlyDataSnap.exists()) {
+        const monthlyData = monthlyDataSnap.data();
+        if (monthlyData.deliveryTime === deliveryTime) {
+          deliveryList.push(`📍 House #${customer.houseNo || 'N/A'} - ${customer.Name || 'N/A'} (${monthlyData.quantity || '0'}L)`);
+        }
+      }
+    }
+
+    deliveryList.sort();
+    message += deliveryList.join('\n');
+    message += `\n\nTotal Houses: ${deliveryList.length}\n`;
+    message += "Have a great day! 🙏";
+
+    const whatsappLink = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappLink, '_blank');
+  }
+
+  // बटनों के लिए इवेंट लिसनर (अब ग्राहक ID और महीना पास करें)
+  const shareMorningButton = document.createElement('button');
+  shareMorningButton.textContent = '📱 Share Morning List';
+  shareMorningButton.addEventListener('click', () => {
+    const customerId = document.getElementById('customerList').value;
+    const month = document.getElementById('monthList').value;
+    WhatsAppsharebtn('Morning', customerId, month);
+  });
+
+  const shareEveningButton = document.createElement('button');
+  shareEveningButton.textContent = '📱 Share Evening List';
+  shareEveningButton.addEventListener('click', () => {
+    const customerId = document.getElementById('customerList').value;
+    const month = document.getElementById('monthList').value;
+    WhatsAppsharebtn('Evening', customerId, month);
+  });
+
+  const buttonContainer = document.getElementById('buttonContainer');
+  buttonContainer.innerHTML = '';
+  buttonContainer.appendChild(shareMorningButton);
+  buttonContainer.appendChild(shareEveningButton);
+
+  shareMorningButton.style.cssText = 'display: inline-block; padding: 10px 15px; margin-right: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; background-color: #25d366; color: white; text-decoration: none;';
+  shareEveningButton.style.cssText = 'display: inline-block; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; background-color: #25d366; color: white; text-decoration: none;';
+
+</script>
+
+<script>
+    // SwipeToLoad.js
+
+(function() {
+    // पुल-टू-रिफ्रेश कंटेनर और आइकन को डायनामिक रूप से बनाएं
+    const pullToRefreshDiv = document.createElement('div');
+    pullToRefreshDiv.id = 'pull-to-refresh';
+    pullToRefreshDiv.style.position = 'fixed';
+    pullToRefreshDiv.style.top = '-60px';
+    pullToRefreshDiv.style.left = '0';
+    pullToRefreshDiv.style.width = '100%';
+    pullToRefreshDiv.style.height = '60px';
+    pullToRefreshDiv.style.backgroundColor = '#f0f0f0';
+    pullToRefreshDiv.style.display = 'flex';
+    pullToRefreshDiv.style.justifyContent = 'center';
+    pullToRefreshDiv.style.alignItems = 'center';
+    pullToRefreshDiv.style.opacity = '0';
+    pullToRefreshDiv.style.transition = 'top 0.2s ease-out, opacity 0.2s ease-out';
+    pullToRefreshDiv.style.zIndex = '10';
+
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'icon';
+    iconDiv.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <polyline points="19 12 12 19 5 12"></polyline>
+        </svg>
+    `;
+    pullToRefreshDiv.appendChild(iconDiv);
+
+    // लोडर के लिए स्टाइल
+    const style = document.createElement('style');
+    style.textContent = `
+        #pull-to-refresh .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+
+    // पेज कंटेंट कंटेनर (अगर यह मौजूद नहीं है तो बनाएं)
+    let pageContent = document.getElementById('page-content');
+    if (!pageContent) {
+        pageContent = document.createElement('div');
+        pageContent.id = 'page-content';
+        // बॉडी के सारे मौजूदा चाइल्ड नोड्स को इसमें मूव करें
+        while (document.body.firstChild) {
+            pageContent.appendChild(document.body.firstChild);
+        }
+        document.body.appendChild(pageContent);
+        pageContent.style.transition = 'transform 0.2s ease-out';
+    }
+
+    document.body.insertBefore(pullToRefreshDiv, document.body.firstChild);
+
+    const reloadThreshold = 100;
+    const resistance = 0.4;
+    let touchStartY = null;
+    let isTouching = false;
+    let isReloading = false;
+
+    function handleTouchStart(e) {
+        if (window.scrollY === 0 && !isReloading) {
+            touchStartY = e.touches[0].clientY;
+            isTouching = true;
+            pullToRefreshDiv.style.transition = 'none';
+            pageContent.style.transition = 'none';
+        }
+    }
+
+    function handleTouchMove(e) {
+        if (!isTouching) return;
+
+        const touchCurrentY = e.touches[0].clientY;
+        const pullDistance = touchCurrentY - touchStartY;
+
+        if (pullDistance > 0) {
+            const translateY = Math.pow(pullDistance, resistance);
+            pageContent.style.transform = `translateY(${translateY}px)`;
+            pullToRefreshDiv.style.top = `${pullDistance * resistance}px`;
+            pullToRefreshDiv.style.opacity = pullDistance * resistance / reloadThreshold;
+        } else {
+            pageContent.style.transform = `translateY(0px)`;
+            pullToRefreshDiv.style.top = '-60px';
+            pullToRefreshDiv.style.opacity = 0;
+        }
+    }
+
+    function handleTouchEnd() {
+        if (!isTouching) return;
+        isTouching = false;
+        pullToRefreshDiv.style.transition = 'top 0.2s ease-out, opacity 0.2s ease-out';
+        pageContent.style.transition = 'transform 0.2s ease-out';
+
+        const currentTop = parseFloat(pullToRefreshDiv.style.top);
+
+        if (currentTop >= reloadThreshold * resistance) {
+            isReloading = true;
+            pageContent.style.transform = `translateY(40px)`;
+            pullToRefreshDiv.style.top = '0px';
+            pullToRefreshDiv.style.opacity = 1;
+            iconDiv.innerHTML = '<div class="loader"></div>';
+
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            pageContent.style.transform = `translateY(0px)`;
+            pullToRefreshDiv.style.top = '-60px';
+            pullToRefreshDiv.style.opacity = 0;
+            iconDiv.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-down">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <polyline points="19 12 12 19 5 12"></polyline>
+                </svg>
+            `;
+        }
+    }
+
+    document.addEventListener('touchstart', handleTouchStart);
+    document.addEventListener('touchmove', handleTouchMove);
+    document.addEventListener('touchend', handleTouchEnd);
+})();
+</script>
+
+</body>
+</html>

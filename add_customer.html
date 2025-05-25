@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>नया ग्राहक जोड़ें</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        form {
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #5cb85c;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #4cae4c;
+        }
+        .error-message {
+            color: red;
+            margin-top: 5px;
+        }
+        .back-button {
+            display: block;
+            margin-top: 20px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .back-button:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>नया ग्राहक जोड़ें</h1>
+    <form id="addCustomerForm">
+        <div>
+            <label for="name">नाम:</label>
+            <input type="text" id="name" name="name" required>
+            <div class="error-message" id="nameError"></div>
+        </div>
+        <div>
+            <label for="mobileNo">मोबाइल नंबर:</label>
+            <input type="number" id="mobileNo" name="mobileNo" required>
+            <div class="error-message" id="mobileNoError"></div>
+        </div>
+        <div>
+            <label for="houseNo">मकान नंबर:</label>
+            <input type="text" id="houseNo" name="houseNo">
+        </div>
+        <div>
+            <label for="monthlyDataMonth">महीना:</label>
+            <select id="monthlyDataMonth" name="monthlyDataMonth" required>
+                <option value="">चुनें</option>
+            </select>
+            <div class="error-message" id="monthlyDataMonthError"></div>
+        </div>
+        <div>
+            <label for="startDate">शुरुआत की तारीख:</label>
+            <input type="date" id="startDate" name="startDate">
+        </div>
+        <div>
+            <label for="stopDate">समाप्ति की तारीख:</label>
+            <input type="date" id="stopDate" name="stopDate">
+        </div>
+        <div>
+            <label for="quantity">मात्रा (लीटर):</label>
+            <input type="number" id="quantity" name="quantity" step="0.01" required>
+            <div class="error-message" id="quantityError"></div>
+        </div>
+        <div>
+            <label for="deliveryTime">डिलीवरी का समय:</label>
+            <select id="deliveryTime" name="deliveryTime" required>
+                <option value="">चुनें</option>
+                <option value="Morning">सुबह</option>
+                <option value="Evening">शाम</option>
+            </select>
+            <div class="error-message" id="deliveryTimeError"></div>
+        </div>
+        <button type="submit">ग्राहक जोड़ें</button>
+    </form>
+
+    <a href="index.html" class="back-button">वापस जाएँ</a>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQahkTWLPVDdI_DdEymvyaHoEQxQ3tzHQ",
+            authDomain: "shreedairy-business-app.firebaseapp.com",
+            projectId: "shreedairy-business-app",
+            storageBucket: "shreedairy-business-app.firebasestorage.app",
+            messagingSenderId: "987256641105",
+            appId: "1:987256641105:web:2724c79d634e9159c0ca70",
+            measurementId: "G-7PXSXT5QKD"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const customersCollection = collection(db, 'Customers');
+
+        const addCustomerForm = document.getElementById('addCustomerForm');
+        const nameInput = document.getElementById('name');
+        const mobileNoInput = document.getElementById('mobileNo');
+        const houseNoInput = document.getElementById('houseNo');
+        const quantityInput = document.getElementById('quantity');
+        const deliveryTimeSelect = document.getElementById('deliveryTime');
+        const monthSelect = document.getElementById('monthlyDataMonth');
+        const startDateInput = document.getElementById('startDate');
+        const stopDateInput = document.getElementById('stopDate');
+        const nameErrorDiv = document.getElementById('nameError');
+        const mobileNoErrorDiv = document.getElementById('mobileNoError');
+        const quantityErrorDiv = document.getElementById('quantityError');
+        const deliveryTimeErrorDiv = document.getElementById('deliveryTimeError');
+        const monthErrorDiv = document.getElementById('monthlyDataMonthError');
+
+        function clearErrors() {
+            nameErrorDiv.textContent = '';
+            mobileNoErrorDiv.textContent = '';
+            quantityErrorDiv.textContent = '';
+            deliveryTimeErrorDiv.textContent = '';
+            monthErrorDiv.textContent = '';
+        }
+
+        function validateForm() {
+            clearErrors();
+            let isValid = true;
+
+            if (nameInput.value.trim() === '') {
+                nameErrorDiv.textContent = 'कृपया नाम दर्ज करें।';
+                isValid = false;
+            }
+
+            if (mobileNoInput.value.trim() === '') {
+                mobileNoErrorDiv.textContent = 'कृपया मोबाइल नंबर दर्ज करें।';
+                isValid = false;
+            } else if (!/^\d{10}$/.test(mobileNoInput.value.trim())) {
+                mobileNoErrorDiv.textContent = 'कृपया 10 अंकों का मोबाइल नंबर दर्ज करें।';
+                isValid = false;
+            }
+
+            if (monthSelect.value === '') {
+                monthErrorDiv.textContent = 'कृपया महीना चुनें।';
+                isValid = false;
+            }
+
+            if (quantityInput.value === '') {
+                quantityErrorDiv.textContent = 'कृपया मात्रा दर्ज करें।';
+                isValid = false;
+            } else if (isNaN(parseFloat(quantityInput.value)) || parseFloat(quantityInput.value) <= 0) {
+                quantityErrorDiv.textContent = 'कृपया एक मान्य मात्रा दर्ज करें।';
+                isValid = false;
+            }
+
+            if (deliveryTimeSelect.value === '') {
+                deliveryTimeErrorDiv.textContent = 'कृपया डिलीवरी का समय चुनें।';
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        addCustomerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (validateForm()) {
+                const name = nameInput.value;
+                const mobileNo = mobileNoInput.value;
+                const houseNo = houseNoInput.value;
+                const quantity = parseFloat(quantityInput.value);
+                const deliveryTime = deliveryTimeSelect.value;
+                const selectedMonth = monthSelect.value;
+                const startDateValue = startDateInput.value;
+                const stopDateValue = stopDateInput.value;
+                const stopDateToStore = stopDateValue === '' ? 'ongoing' : stopDateValue;
+
+                try {
+                    const newCustomerRef = doc(customersCollection);
+                    const customerId = newCustomerRef.id;
+
+                    await setDoc(newCustomerRef, {
+                        Name: name,
+                        mobileNo: mobileNo,
+                        houseNo: houseNo
+                    });
+
+                    const monthlyDataRef = doc(db, `Customers/${customerId}/monthlyData`, selectedMonth);
+                    await setDoc(monthlyDataRef, {
+                        startDate: startDateValue,
+                        stopDate: stopDateToStore,
+                        quantity: quantity,
+                        deliveryTime: deliveryTime,
+                        absentCount: 0 // डिफ़ॉल्ट रूप से 0
+                    });
+
+                    alert('ग्राहक सफलतापूर्वक जोड़ा गया!');
+                    addCustomerForm.reset();
+                } catch (error) {
+                    console.error("Error adding document: ", error);
+                    alert('ग्राहक जोड़ने में त्रुटि हुई। कृपया बाद में प्रयास करें।');
+                }
+            } else {
+                alert('कृपया आवश्यक फ़ील्ड भरें!');
+            }
+        });
+
+        async function populateMonthDropdown() {
+            try {
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0'); // JavaScript में महीने 0 से शुरू होते हैं
+                const currentMonthFormatted = `${currentYear}_${currentMonth}`;
+
+                // सभी ग्राहकों के लिए unique महीनों की सूची प्राप्त करें
+                const allCustomersSnapshot = await getDocs(collection(db, "Customers"));
+                const uniqueMonths = new Set();
+
+                for (const customerDoc of allCustomersSnapshot.docs) {
+                    const monthlyDataCollectionRef = collection(db, "Customers", customerDoc.id, "monthlyData");
+                    const monthlyDataSnapshot = await getDocs(monthlyDataCollectionRef);
+
+                    monthlyDataSnapshot.forEach(doc => {
+                        uniqueMonths.add(doc.id);
+                    });
+                }
+
+                // अगर वर्तमान महीना सूची में नहीं है, तो उसे जोड़ें
+                if (!uniqueMonths.has(currentMonthFormatted)) {
+                    uniqueMonths.add(currentMonthFormatted);
+                }
+
+                // ड्रॉपडाउन विकल्पों को साफ़ करें
+                monthSelect.innerHTML = '<option value="">चुनें</option>';
+
+                // महीनों को सॉर्ट करें और ड्रॉपडाउन में जोड़ें
+                const sortedMonths = Array.from(uniqueMonths).sort();
+                sortedMonths.forEach(month => {
+                    const year = month.split('_')[0];
+                    const monthNumber = parseInt(month.split('_')[1]);
+                    const monthName = new Date(year, monthNumber - 1, 1).toLocaleString('default', { month: 'long' }); // महीने का नाम प्राप्त करें
+                    const option = document.createElement('option');
+                    option.value = month;
+                    option.textContent = `${monthName} ${year}`;
+                    monthSelect.appendChild(option);
+
+                    // वर्तमान महीने को डिफ़ॉल्ट रूप से चुनें
+                    if (month === currentMonthFormatted) {
+                        monthSelect.value = month;
+                    }
+                });
+
+
+            } catch (error) {
+                console.error("Error fetching months: ", error);
+                alert("महीनों को फ़ेच करने में त्रुटि हुई।");
+            }
+        }
+
+        populateMonthDropdown(); // पेज लोड होने पर महीनों को पॉप्युलेट करें
+    </script>
+</body>
+</html>
